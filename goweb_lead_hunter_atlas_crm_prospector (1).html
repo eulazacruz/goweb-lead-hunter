@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GoWeb Lead Hunter | Atlas CRM & Prospector</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#312e81',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased flex flex-col selection:bg-indigo-500 selection:text-white">
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Top Navbar -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/25">
+          GW
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg font-bold tracking-tight text-white">GoWeb Lead Hunter</h1>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">Atlas v1.0</span>
+          </div>
+          <p class="text-xs text-slate-400">Prospecção Ativa & Qualificação Inteligente de Leads</p>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="flex items-center gap-2">
+        <button id="btnSyncSheet" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 transition shadow-sm group">
+          <svg id="syncIcon" class="w-3.5 h-3.5 transition group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <span id="syncText">Sincronizar Planilha</span>
+        </button>
+        <button id="btnOpenNewLeadModal" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Novo Lead
+        </button>
+        <button id="btnExportCSV" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Exportar
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Metric Badges Bar -->
+  <section class="border-b border-slate-800/80 bg-slate-900/40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+        <div>
+          <p class="text-[11px] font-medium text-slate-400">Total de Leads</p>
+          <p id="statTotalLeads" class="text-xl font-bold text-white mt-0.5">35</p>
+        </div>
+        <div class="h-8 w-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-300">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+        </div>
+      </div>
+
+      <div class="bg-slate-900/70 border border-amber-500/20 rounded-xl p-3 flex items-center justify-between">
+        <div>
+          <p class="text-[11px] font-medium text-amber-300/80">Leads Ouro (Sem SaaS)</p>
+          <p id="statGoldLeads" class="text-xl font-bold text-amber-400 mt-0.5">33</p>
+        </div>
+        <div class="h-8 w-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        </div>
+      </div>
+
+      <div class="bg-slate-900/70 border border-blue-500/20 rounded-xl p-3 flex items-center justify-between">
+        <div>
+          <p class="text-[11px] font-medium text-blue-300/80">Em Negociação</p>
+          <p id="statActiveLeads" class="text-xl font-bold text-blue-400 mt-0.5">0</p>
+        </div>
+        <div class="h-8 w-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        </div>
+      </div>
+
+      <div class="bg-slate-900/70 border border-emerald-500/20 rounded-xl p-3 flex items-center justify-between">
+        <div>
+          <p class="text-[11px] font-medium text-emerald-300/80">Clientes Fechados</p>
+          <p id="statWonLeads" class="text-xl font-bold text-emerald-400 mt-0.5">0</p>
+        </div>
+        <div class="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main View Tabs & Filter Controls -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full flex flex-col gap-6">
+
+    <!-- View Switcher & Live Filter Toolbar -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col gap-4">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+        <!-- Navigation Tabs -->
+        <nav class="flex items-center gap-1.5" aria-label="Abas">
+          <button id="tabBtnCards" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+            Leads & Cards
+          </button>
+          <button id="tabBtnTable" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            Visão Tabela CRM
+          </button>
+          <button id="tabBtnGenerator" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+            Playbook & Pitches
+          </button>
+          <button id="tabBtnInspector" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            Detector de SaaS
+          </button>
+        </nav>
+
+        <span id="filteredCountBadge" class="text-xs text-slate-400 font-mono">
+          Exibindo <strong class="text-indigo-400">35</strong> de 35 leads
+        </span>
+      </div>
+
+      <!-- Filters Section -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <!-- Search bar -->
+        <div class="relative lg:col-span-2">
+          <input type="text" id="searchInput" placeholder="Buscar estabelecimento, bairro ou telefone..." class="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-slate-200">
+          <svg class="w-4 h-4 text-slate-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </div>
+
+        <!-- Category Filter -->
+        <div>
+          <select id="filterCategory" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs focus:outline-none focus:border-indigo-500 text-slate-300">
+            <option value="ALL">Todas as Categorias</option>
+            <option value="Pastelaria & Lanchonete">Pastelaria & Lanchonete</option>
+            <option value="Hamburgueria & Lanchonete">Hamburgueria & Lanchonete</option>
+            <option value="Açaiteria & Sorveteria">Açaiteria & Sorveteria</option>
+            <option value="Marmitaria & Refeições">Marmitaria & Refeições</option>
+            <option value="Tapiocaria & Comidas Típicas">Tapiocaria & Comidas Típicas</option>
+            <option value="Confeitaria & Doceria">Confeitaria & Doceria</option>
+            <option value="Distribuidora de Bebidas">Distribuidora de Bebidas</option>
+            <option value="Pet Shop & Estética">Pet Shop & Estética</option>
+            <option value="Hortifruti & Orgânicos">Hortifruti & Orgânicos</option>
+          </select>
+        </div>
+
+        <!-- Neighborhood Filter -->
+        <div>
+          <select id="filterNeighborhood" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs focus:outline-none focus:border-indigo-500 text-slate-300">
+            <option value="ALL">Todos os Bairros</option>
+            <option value="Mangabeira">Mangabeira</option>
+            <option value="Bessa">Bessa</option>
+            <option value="Bancários">Bancários</option>
+            <option value="Torre">Torre</option>
+            <option value="Valentina">Valentina</option>
+            <option value="Jaguaribe">Jaguaribe</option>
+            <option value="Castelo Branco">Castelo Branco</option>
+            <option value="Ernesto Geisel">Ernesto Geisel</option>
+            <option value="Centro">Centro</option>
+            <option value="Cruz das Armas">Cruz das Armas</option>
+            <option value="Cabedelo">Cabedelo / Intermares</option>
+          </select>
+        </div>
+
+        <!-- Funnel Status Filter -->
+        <div class="flex gap-2">
+          <select id="filterStatus" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs focus:outline-none focus:border-indigo-500 text-slate-300">
+            <option value="ALL">Todos os Status</option>
+            <option value="Novo Lead">Novo Lead</option>
+            <option value="Em Contato">Em Contato</option>
+            <option value="Demonstração Agendada">Demonstração</option>
+            <option value="Proposta Enviada">Proposta</option>
+            <option value="Fechado">Fechado</option>
+            <option value="Perdido">Perdido</option>
+          </select>
+          <button id="btnResetFilters" title="Limpar Filtros" class="px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 1: CARDS VIEW -->
+    <div id="viewCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    </div>
+
+    <!-- TAB 2: TABLE VIEW -->
+    <div id="viewTable" class="hidden bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-950/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+            <tr>
+              <th class="p-3.5">ID / Nome</th>
+              <th class="p-3.5">Categoria</th>
+              <th class="p-3.5">Bairro</th>
+              <th class="p-3.5">Contatos</th>
+              <th class="p-3.5">Score</th>
+              <th class="p-3.5">Status Funil</th>
+              <th class="p-3.5 text-right">Ação</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody" class="divide-y divide-slate-800/80 text-slate-300">
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 3: GENERATOR / PLAYBOOK -->
+    <div id="viewGenerator" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-1 bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col gap-4">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+          Personalizador de Mensagens
+        </h3>
+        <p class="text-xs text-slate-400">Escolha o nicho e canal para gerar a mensagem com psicologia de ancoragem e quebra de objeções.</p>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Nicho Alvo</label>
+          <select id="playbookNiche" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200">
+            <option value="hamburgueria">Hamburgueria & Lanchonete (Ancoragem iFood)</option>
+            <option value="acaiteria">Açaiteria & Sorveteria (Montador de Copos)</option>
+            <option value="pastelaria">Pastelaria (Comanda Direta na Chapa)</option>
+            <option value="marmitaria">Marmitaria (Pico das 11h às 13h)</option>
+            <option value="confeitaria">Confeitaria (Encomenda com Pix na Tela)</option>
+            <option value="bebidas">Distribuidora de Bebidas (Pedidos Express)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Canal de Contato</label>
+          <select id="playbookChannel" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200">
+            <option value="whatsapp">WhatsApp (Áudio / Texto Curto)</option>
+            <option value="instagram">Instagram Direct (Visual & Direto)</option>
+            <option value="email">E-mail Cold Outreach</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Nome do Estabelecimento</label>
+          <input type="text" id="playbookTargetName" value="Duju Pastelaria" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200">
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Bairro do Local</label>
+          <input type="text" id="playbookTargetNeighborhood" value="Mangabeira" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200">
+        </div>
+
+        <button id="btnGenerateCopy" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-semibold text-xs text-white transition shadow-lg shadow-indigo-600/20">
+          Gerar Mensagem Personalizada
+        </button>
+      </div>
+
+      <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+            <div>
+              <h4 id="copyTitle" class="text-sm font-bold text-white">Mensagem Gerada para WhatsApp</h4>
+              <p id="copySubtitle" class="text-xs text-indigo-400 font-medium">Gatilho: Ancoragem de Lucro e Taxas de Marketplace</p>
+            </div>
+            <button id="btnCopyGeneratedText" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+              Copiar Mensagem
+            </button>
+          </div>
+
+          <div class="relative">
+            <textarea id="copyOutputArea" rows="8" readonly class="w-full p-4 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-slate-300 leading-relaxed focus:outline-none"></textarea>
+          </div>
+        </div>
+
+        <div class="mt-4 p-3.5 rounded-xl bg-slate-950/70 border border-slate-800">
+          <h5 class="text-xs font-semibold text-slate-300 mb-1">Por que essa mensagem funciona?</h5>
+          <p id="copyExplanation" class="text-xs text-slate-400">
+            Não parece uma proposta fria de vendedor. Começa elogiando o movimento real no bairro e faz uma pergunta aberta sobre a dor no horário de pico, incentivando uma resposta espontânea de quem sente o gargalo todo dia.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: INSPECTOR / DETECTOR DE SAAS -->
+    <div id="viewInspector" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+      <div class="max-w-2xl mx-auto flex flex-col gap-5 text-center">
+        <div>
+          <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Radar de Concorrentes</span>
+          <h3 class="text-lg font-bold text-white mt-2">Detector de SaaS & Qualificador de Link</h3>
+          <p class="text-xs text-slate-400 mt-1">Cole a URL do link na bio do Instagram ou o site do restaurante para escanear se o estabelecimento já possui sistema contratado.</p>
+        </div>
+
+        <div class="flex gap-2 text-left">
+          <input type="text" id="inspectorInput" placeholder="Ex: https://wa.me/5583991903829 ou https://pedido.anota.ai/loja/exemplo" class="flex-1 px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500">
+          <button id="btnRunInspector" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition">
+            Analisar Link
+          </button>
+        </div>
+
+        <!-- Results box -->
+        <div id="inspectorResult" class="hidden text-left p-4 rounded-xl border">
+        </div>
+
+        <!-- Benchmark competitor list -->
+        <div class="text-left border-t border-slate-800 pt-4 mt-2">
+          <p class="text-xs font-semibold text-slate-400 mb-2">Concorrentes rastreados automaticamente pelo motor GoWeb:</p>
+          <div class="flex flex-wrap gap-2 text-[11px] font-mono text-slate-400">
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800">anota.ai</span>
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800">menudino.com</span>
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800">instadelivery.com.br</span>
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800">saipos.com</span>
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800">goomer.app</span>
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800">neemo.com.br</span>
+            <span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800">ifood.com.br</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Modal: Novo Lead -->
+  <div id="modalNewLead" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl flex flex-col gap-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-white">Adicionar Novo Lead ao Radar</h3>
+        <button id="btnCloseModal" class="text-slate-400 hover:text-white p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <form id="formAddLead" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+        <div class="sm:col-span-2">
+          <label class="block text-slate-400 font-medium mb-1">Nome do Estabelecimento *</label>
+          <input type="text" id="newLeadName" required placeholder="Ex: Pastel da Esquina" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-slate-400 font-medium mb-1">Categoria / Segmento *</label>
+          <select id="newLeadCategory" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-200">
+            <option value="Pastelaria & Lanchonete">Pastelaria & Lanchonete</option>
+            <option value="Hamburgueria & Lanchonete">Hamburgueria & Lanchonete</option>
+            <option value="Açaiteria & Sorveteria">Açaiteria & Sorveteria</option>
+            <option value="Marmitaria & Refeições">Marmitaria & Refeições</option>
+            <option value="Tapiocaria & Comidas Típicas">Tapiocaria & Comidas Típicas</option>
+            <option value="Confeitaria & Doceria">Confeitaria & Doceria</option>
+            <option value="Distribuidora de Bebidas">Distribuidora de Bebidas</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-slate-400 font-medium mb-1">Bairro *</label>
+          <input type="text" id="newLeadNeighborhood" required placeholder="Ex: Mangabeira" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-200">
+        </div>
+
+        <div>
+          <label class="block text-slate-400 font-medium mb-1">WhatsApp (apenas dígitos)</label>
+          <input type="text" id="newLeadPhone" placeholder="Ex: 83991234567" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-200">
+        </div>
+
+        <div>
+          <label class="block text-slate-400 font-medium mb-1">Instagram (@sem arroba)</label>
+          <input type="text" id="newLeadInstagram" placeholder="Ex: nomedoloja" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-200">
+        </div>
+
+        <div class="sm:col-span-2">
+          <label class="block text-slate-400 font-medium mb-1">Diagnóstico do Gargalo (Dor do Cliente)</label>
+          <input type="text" id="newLeadPain" placeholder="Ex: Pedidos anotados no papel; fila de espera no WhatsApp" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-200">
+        </div>
+
+        <div class="sm:col-span-2">
+          <label class="block text-slate-400 font-medium mb-1">Gancho de Vendas (Pitch)</label>
+          <input type="text" id="newLeadPitch" placeholder="Ex: Cardápio próprio com montagem automática e taxa zero de entrega" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-200">
+        </div>
+
+        <div class="sm:col-span-2 flex justify-end gap-2 pt-2 border-t border-slate-800 mt-2">
+          <button type="button" id="btnCancelModal" class="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium">Cancelar</button>
+          <button type="submit" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold shadow-lg shadow-indigo-600/20">Salvar Lead</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800 py-4 text-center text-xs text-slate-500 bg-slate-950">
+    GoWeb Lead Hunter &copy; 2026 &bull; Pronto para deploy no Vercel &bull; Integrado ao ecossistema Atlas
+  </footer>
+
+  <!-- Script Logic -->
+  <script>
+    const INITIAL_LEADS = [{"id": "LEAD-001", "name": "Duju Pastelaria e Lanchonete", "category": "Pastelaria & Lanchonete", "neighborhood": "Mangabeira", "address": "R. Anizio de Azevedo Lima, 30 - Mangabeira II", "phone": "83991903829", "instagram": "dujulanchonete", "email": "contato.duju@gmail.com", "score": "Ouro", "status": "Novo Lead", "pain": "Alto fluxo noturno; atendimento 100% manual por WhatsApp sem comanda eletrônica.", "pitch": "Eliminar o gargalo e erros no WhatsApp no pico das 18h às 23h com montagem de pastéis enviada direto para impressão na cozinha."}, {"id": "LEAD-002", "name": "Trailer do Pastel", "category": "Pastelaria & Lanchonete", "neighborhood": "Bairro dos Novais", "address": "Av. Des. Santos Estanislau, 926 - Bairro dos Novais", "phone": "83988248972", "instagram": "", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "Mais de 740 avaliações no Google; pedidos anotados em papel manual, sem comanda de cozinha.", "pitch": "PDV simples para agilizar as filas no balcão e organizar as comandas de viagem sem confusão na fritadeira."}, {"id": "LEAD-003", "name": "Hot Dog do Panda", "category": "Lanchonete & Hot Dog", "neighborhood": "Costa e Silva", "address": "Bairro Costa e Silva, João Pessoa - PB", "phone": "", "instagram": "hotdogdopandajp", "email": "mariadeliciasgourmet@hotmail.com", "score": "Ouro", "status": "Novo Lead", "pain": "Depende de pedidos manuais no WhatsApp e marketplaces com comissões pesadas de até 27%.", "pitch": "Canal próprio de delivery (SaaS white-label) com taxa zero por pedido para reter lucros e fidelizar clientes do bairro."}, {"id": "LEAD-004", "name": "Cantinho do Sertão JP", "category": "Tapiocaria & Comidas Típicas", "neighborhood": "Mangabeira", "address": "R. Advogado Renato Teixeira Bastos, 33 - Mangabeira", "phone": "83998242403", "instagram": "cantinhodosertaomangabeira", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "4.9 estrelas no Google; pedidos via catálogo de texto simples no WhatsApp, sem carrinho ou pagamento integrado.", "pitch": "Cardápio interativo com personalização visual de cuscuz e tapiocas (massa, recheio e adicionais)."}, {"id": "LEAD-005", "name": "Açai da Hora", "category": "Açaiteria & Sorveteria", "neighborhood": "Ernesto Geisel", "address": "Av. Valdemar Naziazeno, 885 - Ernesto Geisel", "phone": "83987274090", "instagram": "", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "Mais de 240 avaliações no Google; atendimento manual para mix de açaí, sopas e lanches, gerando lentidão nas respostas.", "pitch": "Sistema interativo com fotos e cálculo automático de preço por tamanho de copo e adicionais."}, {"id": "LEAD-006", "name": "Império dos Pastéis", "category": "Pastelaria & Lanchonete", "neighborhood": "Cidade Verde II", "address": "R. Jorge Lucena de Moura, 507 - Cidade Verde II", "phone": "83988524895", "instagram": "", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "Envia foto de cardápio estático no WhatsApp e anota os pedidos manualmente para a chapa.", "pitch": "Cardápio web interativo com link na bio e status de preparo em tempo real para o cliente acompanhar."}, {"id": "LEAD-007", "name": "Bam Açaíteria", "category": "Açaiteria & Sorveteria", "neighborhood": "Mangabeira", "address": "R. Manoel Adolfo Costa, 144 - Mangabeira II", "phone": "83999383251", "instagram": "", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "Especializada em cremes artesanais de produção própria; pedidos por texto sofrem com erros de montagem e adicionais.", "pitch": "SaaS focado em montagem de copos com regras de adicionais grátis vs pagos e pagamento Pix automático na tela."}, {"id": "LEAD-008", "name": "Marmitaria Bom Sabor", "category": "Marmitaria & Refeições", "neighborhood": "Tambauzinho", "address": "R. Saffa Said Abel da Cunha, 225 - Tambauzinho", "phone": "83987066649", "instagram": "", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "Mais de 300 avaliações no Google; pico intenso de almoço (11h às 13h) onde perdem vendas pela fila de espera no WhatsApp.", "pitch": "Painel de pedidos de quentinhas do dia para pedidos corporativos e individuais rápidos em menos de 1 minuto."}, {"id": "LEAD-009", "name": "Pastelaria Nordestina", "category": "Pastelaria & Lanchonete", "neighborhood": "Valentina", "address": "R. Mariangela Lucena Peixoto, 100-150 - Valentina I", "phone": "83987094969", "instagram": "", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "Operação tradicional no Valentina, recebendo pedidos apenas no balcão ou chamadas telefônicas.", "pitch": "Sistema de encomendas de salgados para eventos e pedidos programados de balcão com Pix antecipado."}, {"id": "LEAD-010", "name": "Das Colegas - Cuscuz e Tapioca", "category": "Tapiocaria & Comidas Típicas", "neighborhood": "Valentina", "address": "R. Isabel Gomes de Lima, 14 - Valentina de Figueiredo", "phone": "83987736974", "instagram": "", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "Pequeno negócio artesanal; proprietárias cozinham e atendem o WhatsApp simultaneamente.", "pitch": "Automação completa do recebimento de pedidos no WhatsApp para poupar tempo das donas e focar na cozinha."}, {"id": "LEAD-011", "name": "Doce Mistura Confeitaria", "category": "Confeitaria & Doceria", "neighborhood": "Bancários", "address": "R. Bancário Sérgio Guerra, 300 - Bancários", "phone": "83988451290", "instagram": "docemisturajp", "email": "docemisturajp@gmail.com", "score": "Ouro", "status": "Novo Lead", "pain": "Aceita encomendas de bolos e tortas via WhatsApp com troca manual de fotos e negociação de sabores.", "pitch": "Catálogo digital de encomendas com seleção de massa, recheio, topo e pagamento Pix integrado antecipado."}, {"id": "LEAD-012", "name": "Adega Gelada Express", "category": "Distribuidora de Bebidas", "neighborhood": "Torre", "address": "Av. Juarez Távora, 450 - Torre", "phone": "83991207734", "instagram": "geladaexpressjp", "email": "geladajp@outlook.com", "score": "Ouro", "status": "Novo Lead", "pain": "Pico sexta e sábado à noite; atendimento no WhatsApp trava com dezenas de mensagens simultâneas pedindo cerveja e gelo.", "pitch": "Sistema de delivery express com cardápio simplificado em 1 clique para entrega em 30 min sem delay no chat."}, {"id": "LEAD-013", "name": "Pet & Banho Amigo Fiel", "category": "Pet Shop & Estética", "neighborhood": "Bessa", "address": "Av. Gov. Argemiro de Figueiredo, 1100 - Bessa", "phone": "83987113092", "instagram": "amigofielbessa", "email": "amigofielpet@gmail.com", "score": "Prata", "status": "Novo Lead", "pain": "Agendamento de banho e tosa e compra de ração feitos em agenda de papel e conversas soltas no WhatsApp.", "pitch": "SaaS de agendamento online de horários e recompra programada de ração/acessórios."}, {"id": "LEAD-014", "name": "Hortifruti Orgânicos da Terra", "category": "Hortifruti & Orgânicos", "neighborhood": "Altiplano", "address": "R. Poeta Targino Teixeira, 220 - Altiplano", "phone": "83996554819", "instagram": "organicosdaterrajp", "email": "organicosdaterra@gmail.com", "score": "Prata", "status": "Novo Lead", "pain": "Vende cestas de verduras e legumes frescos toda semana anotando itens por mensagem de texto.", "pitch": "Clube de assinatura e montagem de cestas semanais automatizado via web."}, {"id": "LEAD-015", "name": "Espeto & Brasa Burger", "category": "Hamburgueria & Lanchonete", "neighborhood": "Castelo Branco", "address": "R. Maria Batista de Lucena, 85 - Castelo Branco", "phone": "83988345501", "instagram": "espetoebrasajp", "email": "espetoebrasajp@hotmail.com", "score": "Ouro", "status": "Novo Lead", "pain": "Focado no público universitário; dependente de comanda de papel e filas no balcão nos finais de semana.", "pitch": "Cardápio com comanda mobile nas mesas e pedido direto para a churrasqueira/cozinha."}, {"id": "LEAD-016", "name": "Cantinho do Pastel", "category": "Pastelaria & Lanchonete", "neighborhood": "Bancários", "address": "R. Gutembeg Morais Paiva, 296-366 - Bancários", "phone": "83993125776", "instagram": "cantinhodopasteljp", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "Mais de 10 anos de operação; atende universitários anotando pedidos manuais sem comanda de cozinha.", "pitch": "Cardápio interativo com envio direto para a fritadeira/chapa, reduzindo tempo de espera e erros nos adicionais de pastéis."}, {"id": "LEAD-017", "name": "Hambúrguer Salomão", "category": "Hamburgueria & Lanchonete", "neighborhood": "Bessa", "address": "Praça do Caju - Av. Pres. Nilo Peçanha - Bessa", "phone": "83988307052", "instagram": "", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "Nota 5.0 no Google; sofre com filas na praça e pedidos desencontrados no WhatsApp.", "pitch": "PDV móvel para pedidos rápidos na praça e link de autoatendimento para retirada sem fila."}, {"id": "LEAD-018", "name": "Grelha Rústica", "category": "Hamburgueria & Lanchonete", "neighborhood": "Bessa", "address": "Av. Pres. Café Filho, 728 - Bessa", "phone": "83991054083", "instagram": "", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "Delivery ativo no Bessa com anotação manual de blends, pontos de carne e adicionais.", "pitch": "Sistema de personalização de hambúrguer artesanal (ponto da carne, adicionais pagos e combos) com impressão direta."}, {"id": "LEAD-019", "name": "Fátima Restaurante", "category": "Marmitaria & Refeições", "neighborhood": "Jaguaribe", "address": "R. Pref. Osvaldo Pessoa, 128 - Jaguaribe", "phone": "83996305782", "instagram": "", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "Foco em almoço executivo perto do Centro Administrativo; perde clientes pela demora no chat das 12h.", "pitch": "Cardápio do dia automatizado onde o funcionário público escolhe a carne e guarnições em 30 segundos."}, {"id": "LEAD-020", "name": "Restaurante Caçuá", "category": "Marmitaria & Refeições", "neighborhood": "Centro", "address": "Praça 1817, 68 - Centro", "phone": "", "instagram": "restauranteregionalcacua", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "4.8 estrelas; alto volume de marmitas comerciais sem canal próprio para compras corporativas.", "pitch": "Plataforma de marmitex corporativo para escritórios e lojas do Centro com pagamento Pix na confirmação."}, {"id": "LEAD-021", "name": "Açaí Brasil", "category": "Açaiteria & Sorveteria", "neighborhood": "Bancários", "address": "R. Empresário João Rodrigues Alves, 215 - Bancários", "phone": "83988172468", "instagram": "acaibrasil_oficial", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "Mais de 330 avaliações; tempo excessivo no WhatsApp para o cliente listar frutas e caldas.", "pitch": "Montador visual de açaí (tamanho, frutas, caldas e complementos) que já calcula o valor e envia o pedido formatado."}, {"id": "LEAD-022", "name": "Açai Tropical", "category": "Açaiteria & Sorveteria", "neighborhood": "José Américo", "address": "R. Funcionária Pública Geni Ferreira da Silva, 271", "phone": "83998674113", "instagram": "", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "Erros recorrentes de montagem em pedidos de delivery pelo chat tradicional.", "pitch": "Cardápio mobile com fotos dos cremes e regras de adicionais grátis vs pagos, agilizando o envio de pedidos."}, {"id": "LEAD-023", "name": "As Marias Açaí & Lanches", "category": "Açaiteria & Sorveteria", "neighborhood": "Bancários", "address": "R. Bancário Pedro de França Macedo, 361 - Bancários", "phone": "83987546417", "instagram": "", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "Mix de lanches e sobremesas sem carrinho unificado, reduzindo o ticket médio.", "pitch": "Sistema com categorias integradas (lanches + sobremesas) para aumentar o ticket médio por pedido."}, {"id": "LEAD-024", "name": "La Panela Restaurante", "category": "Marmitaria & Refeições", "neighborhood": "Jaguaribe", "address": "Av. Paulo Afonso, 847 - Jaguaribe", "phone": "83996728403", "instagram": "", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "Mais de 180 avaliações; demanda de almoço corporativo reprimida por falta de cardápio digital.", "pitch": "Solução rápida de cardápio semanal para entrega de almoço corporativo recorrente em Jaguaribe."}, {"id": "LEAD-025", "name": "Cantinho da Empada", "category": "Pastelaria & Lanchonete", "neighborhood": "Cristo Redentor", "address": "R. Pres. Ranieri Mazilli, 1900 - Cristo Redentor", "phone": "8332313098", "instagram": "", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "Mais de 700 avaliações; alta dependência de taxas de marketplaces em encomendas e delivery.", "pitch": "Canal próprio de delivery para empadas e tortas com taxa zero, convertendo a clientela fiel do bairro em pedidos diretos."}, {"id": "LEAD-026", "name": "Pastelaria du Bruno", "category": "Pastelaria & Lanchonete", "neighborhood": "Cruz das Armas", "address": "R. José Américo, 597 - Cruz das Armas", "phone": "83987663501", "instagram": "pasteldubruno", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "Nota 5.0 no Google; cliente monta o pastel por texto no WhatsApp de forma manual, propício a atrasos na chapa.", "pitch": "Cardápio interativo onde o cliente monta os recheios e adicionais sozinho, enviando direto para a fritadeira."}, {"id": "LEAD-027", "name": "Paraíso dos Pastéis", "category": "Pastelaria & Lanchonete", "neighborhood": "Jaguaribe", "address": "R. Floriano Peixoto, Jaguaribe", "phone": "8332213587", "instagram": "", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "Mais de 520 avaliações no Google; ponto tradicional com fluxo intenso de balcão sem comanda digital nem cardápio online.", "pitch": "Sistema de comandas rápidas para desafogar o balcão no fim da tarde e automatizar pedidos de viagem."}, {"id": "LEAD-028", "name": "T7 Açaí", "category": "Açaiteria & Sorveteria", "neighborhood": "Torre", "address": "Av. Feliciano Dourado, 167 - Torre", "phone": "83991648658", "instagram": "", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "Açaiteria de bairro com pedidos no WhatsApp dependendo de trocas longas de mensagens para escolha de frutas e caldas.", "pitch": "Montador interativo de copo com cobrança de adicionais integrada e pagamento Pix automático."}, {"id": "LEAD-029", "name": "Cachorro Quente Filha de Tibúrcio", "category": "Lanchonete & Hot Dog", "neighborhood": "Torre", "address": "Av. Rui Barbosa, 630 - Torre", "phone": "8332241926", "instagram": "", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "Mais de 700 avaliações; um dos mais tradicionais da capital, operando sem canal próprio para entregas e retiradas programadas.", "pitch": "Canal próprio de delivery com taxa zero para capturar a enorme clientela fiel que prefere pedir em casa."}, {"id": "LEAD-030", "name": "Cachorro Quente do Willan", "category": "Lanchonete & Hot Dog", "neighborhood": "Torre", "address": "Av. Rui Barbosa, 812 - Torre", "phone": "83988151809", "instagram": "", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "Mais de 700 avaliações; pico noturno com anotação manual gerando filas e queixas de tempo de espera no salão.", "pitch": "Cardápio web com pagamento Pix na tela para retirada rápida no balcão sem fila."}, {"id": "LEAD-031", "name": "Delícias da Gisele", "category": "Marmitaria & Refeições", "neighborhood": "Castelo Branco", "address": "R. Maj. João Junqueira Viana, 93 - Castelo Branco", "phone": "83996047624", "instagram": "", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "Nota 4.9 no Google; feijoada e marmitas no Castelo Branco com anotação manual gerando sobrecarga entre 11h e 13h.", "pitch": "Painel de pedidos do almoço do dia para escritórios e moradores da região universitária."}, {"id": "LEAD-032", "name": "Cozinha Caseira Restaurante UFPB", "category": "Marmitaria & Refeições", "neighborhood": "Castelo Branco", "address": "Central de Aulas - Campus I UFPB", "phone": "83996373969", "instagram": "", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "Atende a comunidade universitária; dependente de taxas de até 27% em marketplaces para entregas fora do campus.", "pitch": "Canal próprio com desconto universitário sem taxa de marketplace, retendo 100% da margem."}, {"id": "LEAD-033", "name": "Tapiocaria Tambaú", "category": "Tapiocaria & Comidas Típicas", "neighborhood": "Manaíra", "address": "Av. Sen. Ruy Carneiro, 17 - Manaíra", "phone": "83988888225", "instagram": "tapiocariatambauoficial", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "188 avaliações na Ruy Carneiro; grande fluxo de moradores e turistas sem comanda eletrônica de mesa nem cardápio QR Code.", "pitch": "Cardápio digital QR Code nas mesas e módulo de pedidos para entrega rápida na orla."}, {"id": "LEAD-034", "name": "Pastelaria Litorânea", "category": "Pastelaria & Lanchonete", "neighborhood": "Cabedelo", "address": "R. Sólon de Lucena, 19 - Vila São João, Cabedelo", "phone": "83988079929", "instagram": "", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "Mais de 280 avaliações no Google; principal pastelaria do centro de Cabedelo operando com anotação manual em papel.", "pitch": "Automação de pedidos com impressora térmica e link na bio do Instagram para pedidos delivery sem comissão."}, {"id": "LEAD-035", "name": "Route Hot Dogs", "category": "Lanchonete & Hot Dog", "neighborhood": "Cabedelo", "address": "Av. Mar das Antilhas - Intermares, Cabedelo", "phone": "83998784228", "instagram": "routehotdogs", "email": "", "score": "Ouro", "status": "Novo Lead", "pain": "Nota 5.0 no Google; lanches artesanais na brasa em Intermares com atendimento 100% manual no WhatsApp.", "pitch": "Sistema de pedidos express para a praia de Intermares com acompanhamento de entrega em tempo real."}];
+
+    let leads = [];
+    try {
+      const saved = localStorage.getItem('goweb_leads_database');
+      leads = saved ? JSON.parse(saved) : INITIAL_LEADS;
+    } catch (e) {
+      leads = INITIAL_LEADS;
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem('goweb_leads_database', JSON.stringify(leads));
+      } catch (e) {}
+      updateMetrics();
+    }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      const colorMap = {
+        success: 'bg-emerald-950 text-emerald-200 border-emerald-800',
+        info: 'bg-indigo-950 text-indigo-200 border-indigo-800',
+        warning: 'bg-amber-950 text-amber-200 border-amber-800'
+      };
+      const chosenColor = colorMap[type] || 'bg-slate-900 text-slate-200 border-slate-800';
+      toast.className = 'px-4 py-2.5 rounded-xl shadow-2xl text-xs font-semibold flex items-center gap-2 transform transition-all duration-300 pointer-events-auto border ' + chosenColor;
+      
+      toast.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><span>' + message + '</span>';
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    function copyToClipboard(text, successMsg = 'Copiado para a área de transferência!') {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => showToast(successMsg)).catch(() => {
+          fallbackCopy(text, successMsg);
+        });
+      } else {
+        fallbackCopy(text, successMsg);
+      }
+    }
+
+    function fallbackCopy(text, successMsg) {
+      const el = document.createElement('textarea');
+      el.value = text;
+      document.body.appendChild(el);
+      el.select();
+      try {
+        document.execCommand('copy');
+        showToast(successMsg);
+      } catch (err) {
+        showToast('Não foi possível copiar.', 'warning');
+      }
+      document.body.removeChild(el);
+    }
+
+    function updateMetrics() {
+      const total = leads.length;
+      const gold = leads.filter(l => l.score === 'Ouro').length;
+      const active = leads.filter(l => ['Em Contato', 'Demonstração Agendada', 'Proposta Enviada'].includes(l.status)).length;
+      const won = leads.filter(l => l.status === 'Fechado').length;
+
+      document.getElementById('statTotalLeads').textContent = total;
+      document.getElementById('statGoldLeads').textContent = gold;
+      document.getElementById('statActiveLeads').textContent = active;
+      document.getElementById('statWonLeads').textContent = won;
+    }
+
+    function getFilteredLeads() {
+      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      const cat = document.getElementById('filterCategory').value;
+      const neigh = document.getElementById('filterNeighborhood').value;
+      const stat = document.getElementById('filterStatus').value;
+
+      return leads.filter(lead => {
+        const matchQ = !q || 
+          lead.name.toLowerCase().includes(q) || 
+          lead.neighborhood.toLowerCase().includes(q) || 
+          (lead.phone && lead.phone.includes(q)) ||
+          lead.category.toLowerCase().includes(q);
+
+        const matchCat = (cat === 'ALL') || lead.category === cat;
+        const matchNeigh = (neigh === 'ALL') || lead.neighborhood.toLowerCase().includes(neigh.toLowerCase());
+        const matchStat = (stat === 'ALL') || lead.status === stat;
+
+        return matchQ && matchCat && matchNeigh && matchStat;
+      });
+    }
+
+    function renderCards() {
+      const container = document.getElementById('viewCards');
+      const filtered = getFilteredLeads();
+      document.getElementById('filteredCountBadge').innerHTML = 'Exibindo <strong class="text-indigo-400">' + filtered.length + '</strong> de ' + leads.length + ' leads';
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="col-span-full py-16 text-center text-slate-500"><p class="text-sm font-semibold text-slate-400">Nenhum lead encontrado com esses filtros.</p><p class="text-xs mt-1">Tente ajustar a busca ou limpar os filtros de categoria/bairro.</p></div>';
+        return;
+      }
+
+      container.innerHTML = filtered.map(lead => {
+        const waLink = lead.phone ? 'https://wa.me/55' + lead.phone : null;
+        const igLink = lead.instagram ? 'https://www.instagram.com/' + lead.instagram : null;
+
+        const scoreColor = lead.score === 'Ouro' 
+          ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' 
+          : 'bg-slate-500/10 text-slate-300 border-slate-500/20';
+
+        const statusMap = {
+          'Novo Lead': 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+          'Em Contato': 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+          'Demonstração Agendada': 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+          'Proposta Enviada': 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+          'Fechado': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+          'Perdido': 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+        };
+        const statusColor = statusMap[lead.status] || 'bg-slate-500/10 text-slate-300 border-slate-500/20';
+
+        return `
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between hover:border-slate-700 transition shadow-lg relative group">
+            <div>
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase border ${scoreColor}">
+                  ⭐ Score ${lead.score}
+                </span>
+                <select data-id="${lead.id}" class="selectStatusQuick px-2 py-0.5 rounded text-[11px] font-semibold border ${statusColor} bg-slate-950 focus:outline-none cursor-pointer">
+                  <option value="Novo Lead" ${lead.status === 'Novo Lead' ? 'selected' : ''}>Novo Lead</option>
+                  <option value="Em Contato" ${lead.status === 'Em Contato' ? 'selected' : ''}>Em Contato</option>
+                  <option value="Demonstração Agendada" ${lead.status === 'Demonstração Agendada' ? 'selected' : ''}>Demonstração</option>
+                  <option value="Proposta Enviada" ${lead.status === 'Proposta Enviada' ? 'selected' : ''}>Proposta</option>
+                  <option value="Fechado" ${lead.status === 'Fechado' ? 'selected' : ''}>Fechado</option>
+                  <option value="Perdido" ${lead.status === 'Perdido' ? 'selected' : ''}>Perdido</option>
+                </select>
+              </div>
+
+              <h4 class="text-base font-bold text-white group-hover:text-indigo-300 transition">${lead.name}</h4>
+              
+              <div class="flex items-center gap-2 text-xs text-slate-400 mt-1">
+                <span>${lead.category}</span>
+                <span>&bull;</span>
+                <span class="text-indigo-400 font-medium">📍 ${lead.neighborhood}</span>
+              </div>
+
+              <!-- Pain Box -->
+              <div class="mt-3.5 p-3 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                <p class="text-[11px] font-semibold uppercase text-slate-400 tracking-wider">Gargalo Operacional:</p>
+                <p class="text-xs text-slate-300 mt-1 leading-relaxed">${lead.pain}</p>
+              </div>
+
+              <!-- Pitch Box -->
+              <div class="mt-2.5 p-3 rounded-xl bg-indigo-950/20 border border-indigo-900/30">
+                <div class="flex items-center justify-between mb-1">
+                  <p class="text-[11px] font-semibold uppercase text-indigo-400 tracking-wider">Pitch Recomendado:</p>
+                  <button data-pitch="${lead.pitch.replace(/"/g, '&quot;')}" class="btnCopyCardPitch text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold underline">
+                    Copiar
+                  </button>
+                </div>
+                <p class="text-xs text-indigo-200/90 italic leading-relaxed">"${lead.pitch}"</p>
+              </div>
+            </div>
+
+            <!-- Action buttons footer -->
+            <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                ${waLink ? `
+                  <a href="${waLink}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition shadow-sm">
+                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.298.144.347.491 1.2.534 1.288.043.088.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.2.662.591 1.221.774 1.394.86.173.086.275.071.376-.045.101-.116.433-.506.549-.68.116-.173.231-.145.39-.086.159.058 1.011.477 1.184.564.173.087.289.13.332.203.043.072.043.419-.101.824z"/></svg>
+                    WhatsApp
+                  </a>
+                ` : `<span class="text-[11px] text-slate-500 italic">Sem WhatsApp</span>`}
+
+                ${igLink ? `
+                  <a href="${igLink}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition border border-slate-700">
+                    Instagram
+                  </a>
+                ` : ''}
+              </div>
+
+              <span class="text-[10px] text-slate-500 font-mono">${lead.id}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.querySelectorAll('.selectStatusQuick').forEach(el => {
+        el.addEventListener('change', (e) => {
+          const id = e.target.getAttribute('data-id');
+          const newStatus = e.target.value;
+          const targetLead = leads.find(l => l.id === id);
+          if (targetLead) {
+            targetLead.status = newStatus;
+            saveState();
+            renderCards();
+            showToast('Status de ' + targetLead.name + ' atualizado para "' + newStatus + '"!');
+          }
+        });
+      });
+
+      document.querySelectorAll('.btnCopyCardPitch').forEach(el => {
+        el.addEventListener('click', (e) => {
+          const pitch = e.target.getAttribute('data-pitch');
+          copyToClipboard(pitch, 'Pitch copiado!');
+        });
+      });
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('tableBody');
+      const filtered = getFilteredLeads();
+
+      tbody.innerHTML = filtered.map(lead => {
+        return `
+          <tr class="hover:bg-slate-950/50 transition">
+            <td class="p-3.5">
+              <span class="font-bold text-white block">${lead.name}</span>
+              <span class="text-[10px] text-slate-500 font-mono">${lead.id}</span>
+            </td>
+            <td class="p-3.5">${lead.category}</td>
+            <td class="p-3.5 text-indigo-300">${lead.neighborhood}</td>
+            <td class="p-3.5 font-mono text-[11px]">
+              ${lead.phone ? '<a href="https://wa.me/55' + lead.phone + '" target="_blank" class="text-emerald-400 hover:underline block">' + lead.phone + '</a>' : '-'}
+              ${lead.instagram ? '<a href="https://instagram.com/' + lead.instagram + '" target="_blank" class="text-indigo-400 hover:underline block">@' + lead.instagram + '</a>' : ''}
+            </td>
+            <td class="p-3.5">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${lead.score === 'Ouro' ? 'bg-amber-500/10 text-amber-400' : 'bg-slate-800 text-slate-400'}">
+                ${lead.score}
+              </span>
+            </td>
+            <td class="p-3.5">
+              <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-200">
+                ${lead.status}
+              </span>
+            </td>
+            <td class="p-3.5 text-right">
+              <button data-pitch="${lead.pitch.replace(/"/g, '&quot;')}" class="btnCopyCardPitch px-2.5 py-1 rounded bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600 hover:text-white transition text-[11px] font-semibold">
+                Copiar Pitch
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      document.querySelectorAll('#tableBody .btnCopyCardPitch').forEach(el => {
+        el.addEventListener('click', (e) => {
+          const pitch = e.target.getAttribute('data-pitch');
+          copyToClipboard(pitch, 'Pitch copiado!');
+        });
+      });
+    }
+
+    function switchTab(activeId) {
+      const tabs = [
+        { btn: 'tabBtnCards', view: 'viewCards' },
+        { btn: 'tabBtnTable', view: 'viewTable' },
+        { btn: 'tabBtnGenerator', view: 'viewGenerator' },
+        { btn: 'tabBtnInspector', view: 'viewInspector' }
+      ];
+
+      tabs.forEach(t => {
+        const btnEl = document.getElementById(t.btn);
+        const viewEl = document.getElementById(t.view);
+
+        if (t.btn === activeId) {
+          btnEl.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition flex items-center gap-2';
+          viewEl.classList.remove('hidden');
+        } else {
+          btnEl.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center gap-2';
+          viewEl.classList.add('hidden');
+        }
+      });
+
+      if (activeId === 'tabBtnTable') renderTable();
+      if (activeId === 'tabBtnCards') renderCards();
+    }
+
+    document.getElementById('tabBtnCards').addEventListener('click', () => switchTab('tabBtnCards'));
+    document.getElementById('tabBtnTable').addEventListener('click', () => switchTab('tabBtnTable'));
+    document.getElementById('tabBtnGenerator').addEventListener('click', () => switchTab('tabBtnGenerator'));
+    document.getElementById('tabBtnInspector').addEventListener('click', () => switchTab('tabBtnInspector'));
+
+    document.getElementById('searchInput').addEventListener('input', () => { renderCards(); renderTable(); });
+    document.getElementById('filterCategory').addEventListener('change', () => { renderCards(); renderTable(); });
+    document.getElementById('filterNeighborhood').addEventListener('change', () => { renderCards(); renderTable(); });
+    document.getElementById('filterStatus').addEventListener('change', () => { renderCards(); renderTable(); });
+
+    document.getElementById('btnResetFilters').addEventListener('click', () => {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('filterCategory').value = 'ALL';
+      document.getElementById('filterNeighborhood').value = 'ALL';
+      document.getElementById('filterStatus').value = 'ALL';
+      renderCards();
+      renderTable();
+      showToast('Filtros redefinidos!');
+    });
+
+    const modal = document.getElementById('modalNewLead');
+    document.getElementById('btnOpenNewLeadModal').addEventListener('click', () => modal.classList.remove('hidden'));
+    document.getElementById('btnCloseModal').addEventListener('click', () => modal.classList.add('hidden'));
+    document.getElementById('btnCancelModal').addEventListener('click', () => modal.classList.add('hidden'));
+
+    document.getElementById('formAddLead').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const numStr = (leads.length + 1).toString().padStart(3, '0');
+      const newLead = {
+        id: 'LEAD-' + numStr,
+        name: document.getElementById('newLeadName').value.trim(),
+        category: document.getElementById('newLeadCategory').value,
+        neighborhood: document.getElementById('newLeadNeighborhood').value.trim(),
+        address: document.getElementById('newLeadNeighborhood').value.trim() + ', João Pessoa - PB',
+        phone: document.getElementById('newLeadPhone').value.replace(/\D/g, ''),
+        instagram: document.getElementById('newLeadInstagram').value.replace('@', '').trim(),
+        email: '',
+        score: 'Ouro',
+        status: 'Novo Lead',
+        pain: document.getElementById('newLeadPain').value.trim() || 'Atendimento manual no WhatsApp e sem comanda eletrônica.',
+        pitch: document.getElementById('newLeadPitch').value.trim() || 'Sistema de pedidos automatizado com taxa zero por venda.'
+      };
+
+      leads.unshift(newLead);
+      saveState();
+      renderCards();
+      renderTable();
+      modal.classList.add('hidden');
+      document.getElementById('formAddLead').reset();
+      showToast('Lead "' + newLead.name + '" adicionado com sucesso!');
+    });
+
+    document.getElementById('btnExportCSV').addEventListener('click', () => {
+      let csv = 'ID;Nome;Categoria;Bairro;Telefone;Instagram;Score;Status;Gargalo;Pitch\n';
+      leads.forEach(l => {
+        csv += '"' + l.id + '";"' + l.name + '";"' + l.category + '";"' + l.neighborhood + '";"' + l.phone + '";"' + l.instagram + '";"' + l.score + '";"' + l.status + '";"' + l.pain.replace(/"/g, '""') + '";"' + l.pitch.replace(/"/g, '""') + '"\n';
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'goweb_leads_joao_pessoa_' + new Date().toISOString().slice(0,10) + '.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Planilha CSV exportada com sucesso!');
+    });
+
+    const COPY_TEMPLATES = {
+      hamburgueria: {
+        whatsapp: "Olá, pessoal da {nome}! Tudo bem? Vi que vocês têm um movimento muito forte aí em {bairro}, parabéns! 🍔\n\nUma dúvida rápida: nos horários de pico à noite, vocês ainda atendem os pedidos de entrega digitando um por um no WhatsApp ou já têm algum sistema que recebe o pedido pronto?\n\nA gente desenvolveu uma plataforma para lanchonetes de João Pessoa onde o cliente pede sozinho com taxa zero (sem perder 27% pro iFood) e a comanda já sai impressa na chapa. Posso te mandar um vídeo de 40s mostrando como fica com o cardápio de vocês?",
+        instagram: "Oi, equipe da {nome}! Acompanho o trabalho de vocês aqui em {bairro} e o visual dos lanches é impecável! 🔥\n\nVocês ainda atendem pedidos anotando mensagem por mensagem no direct/WhatsApp nos finais de semana? Desenvolvemos o GoWeb para estabelecimentos de JP terem cardápio próprio com taxa zero e pagamento Pix direto na tela.\n\nConsigo liberar 14 dias de teste com o cardápio de vocês já cadastrado. Topa dar uma olhada de 1 minuto?",
+        email: "Assunto: Redução de taxas de delivery e automação para a {nome}\n\nOlá, equipe da {nome},\n\nNotamos o excelente posicionamento de vocês na região de {bairro}. No entanto, sabemos que no horário de pico noturno atender clientes manualmente pelo WhatsApp consome horas e gera erros de comanda, enquanto marketplaces chegam a reter até 27% da sua margem.\n\nO GoWeb foi criado especificamente para eliminar essas taxas através de um sistema próprio de pedidos e impressão térmica.\n\nPodemos agendar uma demonstração rápida de 5 minutos nesta semana?"
+      },
+      acaiteria: {
+        whatsapp: "Olá! Tudo bem com a equipe da {nome}? Acompanho o sucesso de vocês aí em {bairro}! 🍧\n\nUma pergunta prática: quando o cliente pede açaí pelo WhatsApp no delivery, o atendente ainda precisa ficar digitando mensagem por mensagem para perguntar frutas, cremes e acompanhamentos ou vocês já têm um montador de copos automático?\n\nCriamos uma solução visual onde o cliente monta o açaí em 3 cliques e o pedido cai pronto na sua tela com Pix pago. Quer ver uma demonstração de 40 segundos?",
+        instagram: "Oi, pessoal da {nome}! O açaí de vocês aqui em {bairro} dá água na boca! 💜\n\nVocês ainda sofrem com cliente demorando pra escolher os acompanhamentos no WhatsApp? Nosso sistema cria uma tela onde ele escolhe o tamanho do copo, os cremes e frutas sozinho, calculando adicionais na hora.\n\nPosso te mandar o link de uma açaiteria modelo pra você testar no celular?",
+        email: "Assunto: Automação de montagem de açaí e delivery para a {nome}\n\nOlá! Atender pedidos de açaí por texto tradicional gera confusão de recheios e demora nas respostas.\n\nCom o GoWeb, seus clientes de {bairro} montam o açaí interativamente, selecionam adicionais pagos e o pedido chega pronto para envio.\n\nGostaria de conhecer como funciona sem compromisso?"
+      },
+      pastelaria: {
+        whatsapp: "Boa tarde, pessoal da {nome}! Tudo joia? O pastel de vocês aí em {bairro} é referência! 🥟\n\nMe tira uma dúvida: na correria do fim de tarde, os pedidos ainda são anotados em comanda de papel ou vocês já têm um sistema que imprime direto na fritadeira?\n\nNós criamos o GoWeb para pastelarias de João Pessoa: o cliente pede pelo celular e a comanda já sai impressa na sua cozinha sem ninguém precisar redigitar. Posso te mostrar em 1 minuto?",
+        instagram: "Oi, pessoal da {nome}! Parabéns pelo capricho nos pastéis aí em {bairro}! 🥟\n\nSabemos que nos horários de maior movimento, responder dezenas de mensagens no WhatsApp atrasa os pedidos. Criamos um link interativo onde o cliente escolhe os recheios e o pedido já chega formatado.\n\nPosso te mandar um modelo de teste?",
+        email: "Assunto: Eliminação de comandas manuais e agilidade na {nome}\n\nOlá, equipe da {nome},\n\nPastelarias com alto giro sofrem com atrasos quando os pedidos são transcritos manualmente do WhatsApp para a cozinha.\n\nNosso sistema automatiza esse fluxo e imprime o pedido instantaneamente. Podemos conversar 3 minutos sobre como aplicar na sua unidade de {bairro}?"
+      },
+      marmitaria: {
+        whatsapp: "Olá! Tudo bem na {nome}? Vi que vocês atendem muito bem a região de {bairro} no almoço! 🍲\n\nEntre 11h e 13h, vocês conseguem responder todo mundo no WhatsApp ou às vezes tem cliente que desiste pela demora?\n\nNossa ferramenta permite que o cliente escolha o prato do dia e as guarnições em 30 segundos, sem você precisar ficar preso no chat na hora mais corrida da cozinha. Quer dar uma olhada em como funciona?",
+        instagram: "Oi, pessoal da {nome}! A comida caseira de vocês aí em {bairro} tem uma cara ótima! 😋\n\nNo horário de pico do almoço, vocês ainda anotam as quentinhas uma por uma no WhatsApp? Nosso sistema automatiza a escolha da proteína e acompanhamentos do dia em menos de 1 minuto.\n\nPosso te mandar um exemplo rápido?",
+        email: "Assunto: Automação de pedidos de almoço corporativo para a {nome}\n\nOlá! O pico de atendimento das 11h30 às 13h é o momento onde marmitarias mais perdem vendas por demora nas respostas do WhatsApp.\n\nO GoWeb resolve esse gargalo com um painel ágil de quentinhas do dia. Podemos agendar uma breve apresentação?"
+      },
+      confeitaria: {
+        whatsapp: "Olá! Tudo bem com a {nome}? Os bolos e doces de vocês aí em {bairro} são lindos demais! 🎂\n\nUma pergunta: para encomendas de bolos, vocês ainda perdem tempo mandando fotos de sabores e negociando topo de bolo no WhatsApp?\n\nCriamos um catálogo onde a pessoa personaliza massa, recheio e já paga o sinal via Pix na hora. Posso te mandar um exemplo?",
+        instagram: "Oi, equipe da {nome}! Trabalho impecável de confeitaria aí em {bairro}! ✨\n\nNosso sistema ajuda confeitarias a receber encomendas de bolos e kits festa com pagamento antecipado do sinal, sem precisar trocar 20 mensagens para fechar um pedido.\n\nQuer ver uma loja modelo de confeitaria funcionando?",
+        email: "Assunto: Catálogo digital de encomendas com Pix para a {nome}\n\nOlá! Confeitarias artesanais perdem em média 3 horas diárias explicando cardápios de bolos no WhatsApp.\n\nCom o GoWeb, seus clientes escolhem o tema, recheios e realizam o pagamento na hora. Vamos agendar uma demonstração?"
+      },
+      bebidas: {
+        whatsapp: "Fala, pessoal da {nome}! Tudo beleza? No fim de semana o movimento de bebidas aí em {bairro} deve ferver! 🍻\n\nVocês ainda atendem os pedidos de cerveja e gelo digitando no WhatsApp ou já têm um cardápio rápido em 1 clique para entrega express?\n\nO GoWeb monta um delivery próprio sem taxas pra vocês venderem fardos e gelo no automático. Posso te mandar o link pra você ver no celular?",
+        instagram: "Oi, time da {nome}! Acompanho o estoque gelado de vocês aqui em {bairro}! 🧊🍺\n\nNos fins de semana o WhatsApp trava com mensagens pedindo preço de fardo? Nosso sistema permite que o cliente compre em 1 clique com endereço e Pix prontos para o motoboy sair.\n\nQuer testar por 14 dias sem custo?",
+        email: "Assunto: Sistema de pedidos express para distribuidoras de bebidas\n\nOlá! Distribuidoras perdem dezenas de vendas nos finais de semana por lentidão no chat do WhatsApp.\n\nO GoWeb oferece um catálogo express para compras rápidas de bebidas. Gostaria de conhecer nossa solução?"
+      }
+    };
+
+    function updatePlaybookCopy() {
+      const niche = document.getElementById('playbookNiche').value;
+      const channel = document.getElementById('playbookChannel').value;
+      const targetName = document.getElementById('playbookTargetName').value || 'Seu Estabelecimento';
+      const targetNeighborhood = document.getElementById('playbookTargetNeighborhood').value || 'seu bairro';
+
+      const template = (COPY_TEMPLATES[niche] && COPY_TEMPLATES[niche][channel]) || COPY_TEMPLATES.hamburgueria.whatsapp;
+      const text = template
+        .replace(/{nome}/g, targetName)
+        .replace(/{bairro}/g, targetNeighborhood);
+
+      document.getElementById('copyOutputArea').value = text;
+      document.getElementById('copyTitle').textContent = 'Mensagem para ' + channel.toUpperCase() + ' (' + niche.toUpperCase() + ')';
+    }
+
+    document.getElementById('btnGenerateCopy').addEventListener('click', updatePlaybookCopy);
+    document.getElementById('playbookNiche').addEventListener('change', updatePlaybookCopy);
+    document.getElementById('playbookChannel').addEventListener('change', updatePlaybookCopy);
+    document.getElementById('btnCopyGeneratedText').addEventListener('click', () => {
+      copyToClipboard(document.getElementById('copyOutputArea').value, 'Mensagem pronta copiada!');
+    });
+
+    document.getElementById('btnRunInspector').addEventListener('click', () => {
+      const rawUrl = document.getElementById('inspectorInput').value.trim();
+      const resBox = document.getElementById('inspectorResult');
+      resBox.classList.remove('hidden');
+
+      if (!rawUrl) {
+        resBox.className = 'text-left p-4 rounded-xl border bg-slate-950 border-slate-800 text-slate-400 text-xs';
+        resBox.textContent = 'Por favor, insira uma URL para analisar.';
+        return;
+      }
+
+      const urlLower = rawUrl.toLowerCase();
+      const competitors = ['anota.ai', 'menudino', 'instadelivery', 'saipos', 'goomer', 'neemo', 'pedir.delivery', 'cardapioweb'];
+      const matchedComp = competitors.find(c => urlLower.includes(c));
+
+      if (matchedComp) {
+        resBox.className = 'text-left p-4 rounded-xl border bg-rose-950/30 border-rose-800/60 text-xs text-rose-200';
+        resBox.innerHTML = '<div class="flex items-center gap-2 font-bold text-rose-400 mb-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>SaaS Concorrente Detectado: <span class="font-mono underline">' + matchedComp + '</span></div><p class="text-slate-300 mt-1">Este estabelecimento já contratou um sistema terceirizado. Prioridade: <strong>Baixa / Substituição</strong>. Aborde apenas se o foco for redução drástica de custo ou insatisfação com suporte.</p>';
+      } else if (urlLower.includes('ifood.com.br')) {
+        resBox.className = 'text-left p-4 rounded-xl border bg-amber-950/30 border-amber-800/60 text-xs text-amber-200';
+        resBox.innerHTML = '<div class="flex items-center gap-2 font-bold text-amber-400 mb-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>Dependência de Marketplace (iFood) Detectada</div><p class="text-slate-300 mt-1">O restaurante está enviando o tráfego do Instagram direto para o iFood, pagando comissões pesadas de até 27%. <strong>Lead Ouro</strong> para o pitch de "Canal Próprio com Taxa Zero".</p>';
+      } else if (urlLower.includes('wa.me') || urlLower.includes('whatsapp.com')) {
+        resBox.className = 'text-left p-4 rounded-xl border bg-emerald-950/30 border-emerald-800/60 text-xs text-emerald-200';
+        resBox.innerHTML = '<div class="flex items-center gap-2 font-bold text-emerald-400 mb-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Qualificação Máxima: Atendimento 100% Manual no WhatsApp</div><p class="text-slate-300 mt-1">O link joga o cliente direto numa conversa de texto vazia. O dono e os atendentes sofrem com gargalo diário e erros de digitação. <strong>Lead Ouro Prioritário para o GoWeb</strong>.</p>';
+      } else {
+        resBox.className = 'text-left p-4 rounded-xl border bg-blue-950/30 border-blue-800/60 text-xs text-blue-200';
+        resBox.innerHTML = '<div class="flex items-center gap-2 font-bold text-blue-400 mb-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Link / Domínio Próprio ou Agrupador</div><p class="text-slate-300 mt-1">Nenhum SaaS alimentar padrão foi identificado. Verifique se o linktree possui PDF manual ou se o site é responsivo. <strong>Score Prata</strong>.</p>';
+      }
+    });
+
+
+    // Google Sheets Direct Live Sync (Option B)
+    const SHEET_ID = '1KYqdv5IsGc61K5s86K-Y1I21jtJvvwwIzzQzLgMy2tg';
+    const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Leads%20CRM`;
+
+    function parseCSVLine(line) {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          if (inQuotes && line[i + 1] === '"') {
+            current += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === ',' && !inQuotes) {
+          result.push(current);
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      result.push(current);
+      return result;
+    }
+
+    async function syncFromGoogleSheet(isAuto = false) {
+      const syncBtn = document.getElementById('btnSyncSheet');
+      const syncIcon = document.getElementById('syncIcon');
+      const syncText = document.getElementById('syncText');
+
+      if (syncIcon) syncIcon.classList.add('animate-spin');
+      if (syncText) syncText.textContent = 'Buscando dados...';
+
+      try {
+        const res = await fetch(SHEET_CSV_URL, { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        const text = await res.text();
+        
+        const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+        const parsedLeads = [];
+
+        for (const line of lines) {
+          const cols = parseCSVLine(line);
+          // Look for ID column starting with LEAD-
+          if (cols[0] && cols[0].startsWith('LEAD-')) {
+            const id = cols[0].trim();
+            const name = (cols[1] || '').trim();
+            const category = (cols[2] || 'Pastelaria & Lanchonete').trim();
+            const neighborhood = (cols[3] || 'João Pessoa').trim();
+            const address = (cols[4] || '').trim();
+            const phone = (cols[5] || '').replace(/\D/g, '');
+            const instagram = (cols[6] || '').replace('@', '').trim();
+            const email = (cols[7] || '').trim();
+            const pain = (cols[8] || 'Atendimento manual no WhatsApp.').trim();
+            const pitch = (cols[9] || 'Sistema de pedidos automatizado com taxa zero.').trim();
+            const status = (cols[10] || 'Novo Lead').trim();
+
+            if (name) {
+              parsedLeads.push({
+                id,
+                name,
+                category,
+                neighborhood,
+                address,
+                phone,
+                instagram,
+                email,
+                score: 'Ouro',
+                status: status || 'Novo Lead',
+                pain,
+                pitch
+              });
+            }
+          }
+        }
+
+        if (parsedLeads.length > 0) {
+          // Merge with local leads: preserve local status if changed
+          const localMap = new Map(leads.map(l => [l.id, l]));
+          const merged = parsedLeads.map(remote => {
+            const local = localMap.get(remote.id);
+            if (local && local.status !== 'Novo Lead') {
+              return { ...remote, status: local.status };
+            }
+            return remote;
+          });
+
+          leads = merged;
+          saveState();
+          renderCards();
+          renderTable();
+          showToast(`Sincronizado! ${leads.length} leads atualizados da Planilha Google!`);
+        } else {
+          if (!isAuto) showToast('Nenhum novo lead encontrado na planilha.', 'info');
+        }
+      } catch (err) {
+        console.warn('Erro ao sincronizar com Planilha Google:', err);
+        if (!isAuto) {
+          showToast('Não foi possível conectar com a planilha. Usando base local offline.', 'warning');
+        }
+      } finally {
+        if (syncIcon) syncIcon.classList.remove('animate-spin');
+        if (syncText) syncText.textContent = 'Sincronizar Planilha';
+      }
+    }
+
+    document.getElementById('btnSyncSheet').addEventListener('click', () => syncFromGoogleSheet(false));
+
+    // Auto-sync on page load if online
+    if (navigator.onLine) {
+      setTimeout(() => syncFromGoogleSheet(true), 1000);
+    }
+
+    updateMetrics();
+    renderCards();
+    updatePlaybookCopy();
+  </script>
+</body>
+</html>
